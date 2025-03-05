@@ -1,18 +1,27 @@
 package com.generation.blogpessoal.controller;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.generation.blogpessoal.model.Postagem;
 import com.generation.blogpessoal.repository.PostagemRepository;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/postagens")
@@ -64,4 +73,45 @@ public class PostagemController {
 		 */
 	}
 	
+	@GetMapping("/titulo/{titulo}")
+	public ResponseEntity<List<Postagem>> getByTitulo(@PathVariable String titulo) {
+		return ResponseEntity.ok(postagemRepository.findAllByTituloContainingIgnoreCase(titulo));
+	}
+	
+	@PostMapping
+	public ResponseEntity<Postagem> post(@Valid @RequestBody Postagem postagem) {
+		//@Valid -> validações feita na model como size, not blank, etc
+		//@RequestBody -> indicando que teremos um corpo para requisição
+		return ResponseEntity.status(HttpStatus.CREATED)
+				.body(postagemRepository.save(postagem));
+		/*
+		 * botãozinho - status -> statuscode 201
+		 * JPA está sendo extendida pelo Repository
+		 */
+	}
+	
+	@PutMapping
+	public ResponseEntity<Postagem> put(@Valid @RequestBody Postagem postagem) {
+		return postagemRepository.findById(postagem.getId())
+				.map(reposta -> ResponseEntity.status(HttpStatus.OK)
+						.body(postagemRepository.save(postagem)))
+				.orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+	}
+	
+	/*
+	 * quando formos usar o deletar, 
+	 * vai retornar o status: sem conteúdo
+	 * caso delete, vai aparecer a mensagem "No Content"
+	 * 
+	 * 
+	 */
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	@DeleteMapping("/{id}")
+	public void delete(@PathVariable Long id) {
+		//tratando e prevenindo a exception NullPointerException
+		Optional<Postagem> postagem = postagemRepository.findById(id);
+		if(postagem.isEmpty()) //confirmando que é vazio
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND);//vai criar um response status que vai gerar uma exception e retornar not found
+		postagemRepository.deleteById(id);
+	}
 }
