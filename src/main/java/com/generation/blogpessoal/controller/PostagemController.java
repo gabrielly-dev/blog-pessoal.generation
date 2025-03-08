@@ -20,6 +20,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.generation.blogpessoal.model.Postagem;
 import com.generation.blogpessoal.repository.PostagemRepository;
+import com.generation.blogpessoal.repository.TemaRepository;
 
 import jakarta.validation.Valid;
 
@@ -35,6 +36,9 @@ public class PostagemController {
 	 * sozinho conforme a necessidade
 	 */
 	private PostagemRepository postagemRepository;
+	
+	@Autowired
+	private TemaRepository temaRepository;
 	
 	
 	@GetMapping
@@ -73,29 +77,55 @@ public class PostagemController {
 		 */
 	}
 	
+	
 	@GetMapping("/titulo/{titulo}")
 	public ResponseEntity<List<Postagem>> getByTitulo(@PathVariable String titulo) {
 		return ResponseEntity.ok(postagemRepository.findAllByTituloContainingIgnoreCase(titulo));
 	}
 	
+	/*
+	 * Criamos um método público, que recebe a anotação postmapping, ele recebe a entidade ResponseEntity do tipo Postagem denominado post
+	 * ele vai checar se o parametro que chegar vai ser valido(seguir as regras que colocamos na model
+	 *  e que tenha corpo, seguindo o padrão dos atributos na classe postagem
+	 * ele vai retornar o status 201 e no corpo da requisição a criação que fizemos
+	 */
 	@PostMapping
 	public ResponseEntity<Postagem> post(@Valid @RequestBody Postagem postagem) {
 		//@Valid -> validações feita na model como size, not blank, etc
 		//@RequestBody -> indicando que teremos um corpo para requisição
-		return ResponseEntity.status(HttpStatus.CREATED)
-				.body(postagemRepository.save(postagem));
+		if (temaRepository.existsById(postagem.getTema().getId()))
+			return ResponseEntity.status(HttpStatus.CREATED).body(postagemRepository.save(postagem));
+		
+		throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tema não existe!", null);
+				
 		/*
 		 * botãozinho - status -> statuscode 201
 		 * JPA está sendo extendida pelo Repository
 		 */
 	}
 	
+	/*
+	 * Criamos um método público, que recebe o ResponseEntity do tipo Postagem, chamado put, 
+	 * ele deve ser válido(seguir as regras que colocamos nos atributos da model Postagem)
+	 * e ter como obrigatório um corpo para preenchermos e enviarmos
+	 * ele vai retornar um método do repository, procurando pelo ID que tem que ser igual ao atributo id da classe Postagem
+	 * ele vai mapear por todo o conteúdo que preenchermos na Body e retornar um status OK caso funcione, retornando
+	 * no body a alteração realizada
+	 * se não funcionar ele vai retornar NOT FOUND 
+	 * não sei porque do build.
+	 */
 	@PutMapping
 	public ResponseEntity<Postagem> put(@Valid @RequestBody Postagem postagem) {
-		return postagemRepository.findById(postagem.getId())
-				.map(reposta -> ResponseEntity.status(HttpStatus.OK)
-						.body(postagemRepository.save(postagem)))
-				.orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+		if(postagemRepository.existsById(postagem.getId())) {
+			
+			if(temaRepository.existsById(postagem.getTema().getId()))
+				return ResponseEntity.status(HttpStatus.OK)
+						.body(postagemRepository.save(postagem));
+		
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tema não existe!", null);
+		}
+		
+		return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
 	}
 	
 	/*
@@ -103,6 +133,11 @@ public class PostagemController {
 	 * vai retornar o status: sem conteúdo
 	 * caso delete, vai aparecer a mensagem "No Content"
 	 * 
+	 * nesse caso é um método delete que pode ser somente @DeleteMapping("/{id}") pois não existe outro delete do mesmo formato
+	 * ele vai receber a anotação ResponseStatus "sem conteúdo" para se caso dê certo, mas não entendi por que está acima e não no meio do código se é necessária a validação primeira
+	 * Ele deve ser um Optional para evitar o NullPointerException, e o optional vai procurar pelo id 
+	 * se caso for vazio, vai gerar uma exception NOT FOUND, e por ser exception, programa se encerrará
+	 * caso não seja vazia, não entrará no if, então será deletado através do método repository deletando pelo id
 	 * 
 	 */
 	@ResponseStatus(HttpStatus.NO_CONTENT)

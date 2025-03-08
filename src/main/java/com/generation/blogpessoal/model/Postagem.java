@@ -4,14 +4,18 @@ import java.time.LocalDateTime;
 
 import org.hibernate.annotations.UpdateTimestamp;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+//Vai refletir no banco de dados como uma nova entidade/nova tabela
 @Entity
 @Table(name = "tb_postagens")
 public class Postagem {
@@ -31,6 +35,20 @@ public class Postagem {
 	
 	@UpdateTimestamp
 	private LocalDateTime data;
+	
+	@ManyToOne 
+	/*
+	 * indicando que o objeto tema vai ter um comportamento no seu relacionamento, a classe que estou é Many
+	 * e a classe que vai se referenciar é o One
+	 * classe postagem é muitos
+	 * classe tema é um
+	 */
+	@JsonIgnoreProperties("postagem")
+	/*
+	 * vai ignorar propriedades da postagem, na classe tema
+	 * fazendo com que não se forme um ciclo infinito de postagem se referenciar a tema e tema se referenciar a postagem
+	 */
+	private Tema tema;
 
 	public Long getId() {
 		return id;
@@ -62,6 +80,14 @@ public class Postagem {
 
 	public void setData(LocalDateTime data) {
 		this.data = data;
+	}
+
+	public Tema getTema() {
+		return tema;
+	}
+
+	public void setTema(Tema tema) {
+		this.tema = tema;
 	}
 	
 	
