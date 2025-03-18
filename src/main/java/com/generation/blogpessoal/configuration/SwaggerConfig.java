@@ -4,6 +4,7 @@ import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+
 import io.swagger.v3.oas.models.ExternalDocumentation;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
@@ -14,13 +15,13 @@ import io.swagger.v3.oas.models.responses.ApiResponses;
 
 @Configuration
 public class SwaggerConfig {
-	//criando uma classe de código que vai influenciar diretamente na aplicação inteira
+	
 	@Bean
 	OpenAPI springBlogPessoalAPI() {
 		return new OpenAPI()
 				.info(new Info()
 						.title("Projeto Blog Pessoal")
-						.description("Projeto Blog PEssoal - Generation Brasil")
+						.description("Projeto Blog Pessoal - Generation Brasil")
 						.version("v0.0.1")
 						.license(new License()
 								.name("Generation Brasil")
@@ -28,6 +29,7 @@ public class SwaggerConfig {
 						.contact(new Contact()
 								.name("Generation Brasil")
 								.url("https://github.com/conteudoGeneration")
+								.url("http://github.com/tjfaccipieri")
 								.email("conteudogeneration@generation.org")))
 				.externalDocs(new ExternalDocumentation()
 						.description("Github")
@@ -35,13 +37,12 @@ public class SwaggerConfig {
 	}
 	
 	@Bean
-	//vamos customizar as respostas da minha API, acessar doc oficial OpenDocs
 	OpenApiCustomizer customerGlobalHeaderOpenApiCustomizer() {
-		//função lambda por ter seta
 		return openApi -> {
 			openApi.getPaths().values().forEach(pathItem -> pathItem.readOperations()
 					.forEach(operation -> {
 						ApiResponses apiResponses = operation.getResponses(); 
+						
 						apiResponses.addApiResponse("200", createApiResponse("Sucesso!"));
 						apiResponses.addApiResponse("201", createApiResponse("Objeto Persistido!"));
 						apiResponses.addApiResponse("204", createApiResponse("Objeto Excluído!"));
@@ -57,4 +58,5 @@ public class SwaggerConfig {
 	private ApiResponse createApiResponse(String message) {
 		return new ApiResponse().description(message);
 	}
+
 }
